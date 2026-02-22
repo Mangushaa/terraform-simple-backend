@@ -46,61 +46,61 @@ jobs:
           name: app-jar
           path: target/*.jar
 
-  build-ami:
-    name: Build AMI with Packer
-    runs-on: ubuntu-latest
-    needs: build-service
-
-    # keep same permissions if you need OIDC to assume role
-    permissions:
-      id-token: write
-      contents: read
-
-    env:
-      AWS_REGION: ${{ env.AWS_REGION }}
-      APP_NAME: ${{ env.APP_NAME }}
-      APP_VERSION: ${{ needs.build-service.outputs.version }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download built JAR
-        uses: actions/download-artifact@v4
-        with:
-          name: app-jar
-          path: ./artifact
-
-      # Configure AWS credentials — using OIDC to assume a role
-      # You must set the secret AWS_ROLE_TO_ASSUME to the role ARN that GitHub OIDC can assume.
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Install Packer
-        uses: hashicorp/setup-packer@v1
-        with:
-          version: "1.9.0" # change to desired version or omit for latest
-
-      # optional: show the artifact and version
-      - name: Show artifact and version
-        run: |
-          ls -la ./artifact
-          echo "APP_VERSION=${APP_VERSION}"
-
-      # Prepare variables for packer - adjust as needed for your template
-      - name: Run Packer init
-        run: |
-          # if using HCL Packer template with modules/plugins
-          packer init ./packer/ami.pkr.hcl
-
-      - name: Run Packer build
-        run: |
-          # pass variables to packer; adjust variable names to match your template
-          packer build \
-            -var "app_name=${APP_NAME}" \
-            -var "app_version=${APP_VERSION}" \
-            -var "app_jar=./artifact/$(basename $(ls artifact/*.jar | head -n1))" \
-            ./packer/ami.pkr.hcl
+#  build-ami:
+#    name: Build AMI with Packer
+#    runs-on: ubuntu-latest
+#    needs: build-service
+#
+#    # keep same permissions if you need OIDC to assume role
+#    permissions:
+#      id-token: write
+#      contents: read
+#
+#    env:
+#      AWS_REGION: ${{ env.AWS_REGION }}
+#      APP_NAME: ${{ env.APP_NAME }}
+#      APP_VERSION: ${{ needs.build-service.outputs.version }}
+#
+#    steps:
+#      - name: Checkout repository
+#        uses: actions/checkout@v4
+#
+#      - name: Download built JAR
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: app-jar
+#          path: ./artifact
+#
+#      # Configure AWS credentials — using OIDC to assume a role
+#      # You must set the secret AWS_ROLE_TO_ASSUME to the role ARN that GitHub OIDC can assume.
+#      - name: Configure AWS credentials (OIDC)
+#        uses: aws-actions/configure-aws-credentials@v2
+#        with:
+#          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+#          aws-region: ${{ env.AWS_REGION }}
+#
+#      - name: Install Packer
+#        uses: hashicorp/setup-packer@v1
+#        with:
+#          version: "1.9.0" # change to desired version or omit for latest
+#
+#      # optional: show the artifact and version
+#      - name: Show artifact and version
+#        run: |
+#          ls -la ./artifact
+#          echo "APP_VERSION=${APP_VERSION}"
+#
+#      # Prepare variables for packer - adjust as needed for your template
+#      - name: Run Packer init
+#        run: |
+#          # if using HCL Packer template with modules/plugins
+#          packer init ./packer/ami.pkr.hcl
+#
+#      - name: Run Packer build
+#        run: |
+#          # pass variables to packer; adjust variable names to match your template
+#          packer build \
+#            -var "app_name=${APP_NAME}" \
+#            -var "app_version=${APP_VERSION}" \
+#            -var "app_jar=./artifact/$(basename $(ls artifact/*.jar | head -n1))" \
+#            ./packer/ami.pkr.hcl
